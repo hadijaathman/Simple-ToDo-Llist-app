@@ -1,0 +1,22 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "todoapp"
+  namespace: "default"
+  labels:
+    app: "todoapp"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "todoapp"
+  template:
+    metadata:
+      labels:
+        app: "todoapp"
+    spec:
+      containers:
+      - name: "todoapp"
+        image: "gcr.io/case-301214/nodejs-gcr-repo:latest"
+        imagePullPolicy: Always
