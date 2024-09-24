@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const TodoTask = require("./models/TodoTask");
 let routings = require('./routes/routings');
-
+const PORT = process.env.port || 5000
 dotenv.config();
 app.use("/public", express.static("public"));
 
