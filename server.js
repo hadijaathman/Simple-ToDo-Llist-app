@@ -4,7 +4,6 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const TodoTask = require("./models/TodoTask");
 let routings = require('./routes/routings');
-const PORT = process.env.port || 5000
 dotenv.config();
 app.use("/public", express.static("public"));
 
@@ -13,8 +12,17 @@ app.use(express.urlencoded({ extended: true }));
 //connection to db
 mongoose.set("useFindAndModify", false);
 mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true }, () => {
-    console.log("Connected to db!");
-    app.listen(8080, () => console.log("Server Up and running"));
+    
+//    console.log("Connected to db!");
+//    app.listen(8080, () => console.log("Server Up and running"));
+// pointing to ec2 server
+    
+const port = process.env.PORT || 8080;
+const host = '0.0.0.0';
+
+app.listen(port, host, () => {
+  console.log(`App listening at http://${host}:${port}`);
+  console.log('To access it from outside EC2, use your instance\'s public IP or domain');
 });
 
 app.set("view engine", "ejs");
