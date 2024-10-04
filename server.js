@@ -4,6 +4,78 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const TodoTask = require("./models/TodoTask");
 let routings = require('./routes/routings');
+//**************s3 bucket connection
+const aws = require('aws-sdk');
+const { v4: uuidv4 } = require('uuid');
+//aws config
+aws.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
+
+const s3 = new aws.S3();
+const BUCKET_NAME = 'myapplistbucket';
+const TODO_FILE_KEY = 'todo-list.json';
+
+// Helper function to read todo list from S3
+async function getTodoList() {
+  try {
+    const data = await s3.getObject({ Bucket: BUCKET_NAME, Key: TODO_FILE_KEY }).promise();
+    return JSON.parse(data.Body.toString());
+  } catch (error) {
+    if (error.code === 'NoSuchKey') {
+      return []; // Return empty array if file doesn't exist yet
+    }
+    throw error;
+  }
+}
+
+// Helper function to write todo list to S3
+async function saveTodoList(todoList) {
+  const params = {
+    Bucket: BUCKET_NAME,
+    Key: TODO_FILE_KEY,
+    Body: JSON.stringify(todoList),
+    ContentType: 'application/json'
+  };
+  await s3.putObject(params).promise();
+}
+
+app.get('/tasks', async (req, res) => {
+  try {
+    const todoList = await getTodoList();
+    res.json(todoList);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve tasks' });
+  }
+});
+
+app.post('/add-task', async (req, res) => {
+  try {
+    const todoList = await getTodoList();
+    const newTask = { id: uuidv4(), text: req.body.task };
+    todoList.push(newTask);
+    await saveTodoList(todoList);
+    res.redirect('/');
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add task' });
+  }
+});
+
+app.delete('/delete-task/:id', async (req, res) => {
+  try {
+    let todoList = await getTodoList();
+    todoList = todoList.filter(task => task.id !== req.params.id);
+    await saveTodoList(todoList);
+    res.sendStatus(200);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
+
+//**************s3 bucket connection
 dotenv.config();
 app.use("/public", express.static("public"));
 
